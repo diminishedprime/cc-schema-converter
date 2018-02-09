@@ -48,6 +48,7 @@
     'label': 'Country.',
     'description': 'Country of member.',
     'dataType': 'STRING',
+    'isDefault': true,
     'semantics': {
       'conceptType': 'DIMENSION',
       'semanticType': 'COUNTRY',
@@ -59,6 +60,7 @@
     'label': 'Member Count',
     'description': 'The number of members of the group.',
     'dataType': 'NUMBER',
+    'isDefault': true,
     'semantics': {
       'conceptType': 'METRIC',
       'semanticType': 'NUMBER',
