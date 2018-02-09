@@ -1,6 +1,9 @@
 {
-  "name": "schema-switcher",
+  "name": "cc-schema-converter",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^2.14.1"
+  }
 }
