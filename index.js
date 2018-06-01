@@ -3,17 +3,11 @@ const fs = require('fs')
 const R = require('ramda')
 
 const imports = `\
-var cc = DataStudioApp.getCommunityConnectorApp();\n\
-var concepts = cc.ConceptType;\n\
-var types = cc.FieldType;\n\
-var aggregations = cc.AggregationType;\n\n\
-`
-
-const fieldsBuilderPrefix = `\
-var schema = cc.newFieldsBuilder()\n\
-`
-const fieldsBuilderPostfix = `\
-    .build();
+function getFields() {\n\
+  var cc = DataStudioApp.createCommunityConnector();\n\
+  var fields = cc.getFields();\n\
+  var types = cc.FieldType;\n\
+  var aggregations = cc.AggregationType;\n\n\
 `
 
 const readFile = async (filename) => {
@@ -31,25 +25,25 @@ const readFile = async (filename) => {
 const fieldToFieldBuilder = (field) => {
   const dimensionOrField = field.semantics.conceptType === 'METRIC' ? 'Metric' : 'Dimension'
 
-  const id = `.setId(${field.name})\n`
-  const name = field.label ? `.setName(${field.label})\n` : ''
-  const description = field.description ? `.setDescription(${field.description})\n` : ''
-  const type = field.semantics.semanticType ? `.setType(types.${field.semantics.semanticType})` : ''
-  const aggregation = field.defaultAggregationType ? `.setAggregation(aggregations.${field.defaultAggregationType})\n` : ''
-  const group = field.group ? `.setGroup('${field.group}')\n` : ''
-  const formula = field.formula ? `.setFormula('${field.formula}')\n` : ''
+  const  id           =  field.name                    ?  `.setId('${field.name}')\n`                                        :  ''
+  const  name         =  field.label                   ?  `.setName('${field.label}')\n`                                     :  ''
+  const  description  =  field.description             ?  `.setDescription('${field.description}')\n`                        :  ''
+  const  type         =  field.semantics.semanticType  ?  `.setType(types.${field.semantics.semanticType})\n`                :  ''
+  const  aggregation  =  field.defaultAggregationType  ?  `.setAggregation(aggregations.${field.defaultAggregationType})\n`  :  ''
+  const  group        =  field.group                   ?  `.setGroup('${field.group}')\n`                                    :  ''
+  const  formula      =  field.formula                 ?  `.setFormula('${field.formula}')\n`                                :  ''
 
 
   const newVar = `\
-var ${field.name} = cc.new${dimensionOrField}\n\
-    ${id}\
-    ${name}\
-    ${description}\
-    ${type}\
-    ${aggregation}\
-    ${group}\
-    ${formula}\
-`.trim() + ';\n'
+  var ${field.name.toLowerCase()} = fields.new${dimensionOrField}()\n\
+      ${id}\
+      ${name}\
+      ${description}\
+      ${type}\
+      ${aggregation}\
+      ${group}\
+      ${formula}\
+`.trimRight() + ';\n';
   return newVar
 }
 
@@ -63,22 +57,23 @@ const convert = async (fieldsFilePath) => {
 
   const asLibraryCode = fields.map(fieldToFieldBuilder).join('\n') + '\n'
 
-  const fieldAdds = fields.map((field) => `    .addField(${field.name})`).join('\n') + '\n'
-
   const defaultMetric = R.prop('name', fields.find(isDefaultMetric)) || ''
-  const defaultMetricAdd = defaultMetric ? `    .setDefaultMetric(${defaultMetric}.getId())\n` : ''
+  const defaultMetricAdd = defaultMetric ? `  fields.setDefaultMetric(${defaultMetric.toLowerCase()}.getId());\n` : ''
 
   const defaultDimension = R.prop('name', fields.find(isDefaultDimension)) || ''
-  const defaultDimensionAdd = defaultDimension ? `    .setDefaultDimension(${defaultDimension}.getId())\n` : ''
+  const defaultDimensionAdd = defaultDimension ? `  fields.setDefaultDimension(${defaultDimension.toLowerCase()}.getId())\n` : ''
 
   const newFormat = `\
 ${imports}\
 ${asLibraryCode}\
-${fieldsBuilderPrefix}\
-${fieldAdds}\
 ${defaultMetricAdd}\
 ${defaultDimensionAdd}\
-${fieldsBuilderPostfix}
+  return fields;
+};\n\
+\n\
+function getSchema(request) {\n\
+  return getFields().validateAndBuild();\n\
+}\n\
 `
   console.log(newFormat)
 }
