@@ -1,18 +1,12 @@
 # Community Connector Schema Converter
 
-This library helps with the transition from manually typing out the `getSchema`
-response for a Community Connector as JSON to using the new Apps Scripts
-library.
-
-## Requirements
-
-+  A modern version of node. (must support async functions)
+This app helps with the transition from manually typing out the `getSchema`
+response for a Community Connector as JSON to using the new Data Studio App
+Service.
 
 ## Usage
-Copy your existing schema into a new file. Make sure that the schema is proper
-JSON. Usually you just have to make sure that the keys are strings and not
-properties.
+1. Navigate to [the github pages site][github-pages].
+1. Copy your schema into the `Schema` input field.
+1. Copy the generated code back into your appsscript code.
 
-1.  `$ git clone git@github.com:diminishedprime/cc-schema-converter.git`
-1.  `$ yarn install`
-1.  `$ node index.js -- convert <path-to-your-file>`
+[github-pages]: https://diminishedprime.github.io/cc-schema-converter
