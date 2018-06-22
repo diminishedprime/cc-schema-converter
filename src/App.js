@@ -29,6 +29,8 @@ const App = ({
   includeVar,
   onCheckboxChange,
   schemaText,
+  useSingleQuotes,
+  onCheckboxChangeQuotes,
 }) => (
   <div className={classes.root}>
     <Grid container spacing={24}>
@@ -57,6 +59,16 @@ const App = ({
           }
           label="Include var"
         />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={useSingleQuotes}
+              onChange={onCheckboxChangeQuotes}
+              color="primary"
+            />
+          }
+          label="Use Single Quotes for Strings"
+        />
         <TextField
           label="Schema"
           helperText="Paste your original schema here."
@@ -75,11 +87,14 @@ const mapDispatchToProps = (dispatch) => ({
   onInputChange: (e) => dispatch({type: 'schemaChange', value: e.target.value}),
   onCheckboxChange: (e) =>
     dispatch({type: 'checkboxChange', value: e.target.checked}),
+  onCheckboxChangeQuotes: (e) =>
+    dispatch({type: 'checkboxChangeQuotes', value: e.target.checked}),
 });
 
 const mapStateToProps = (state) => ({
   generatedCode: state.generatedCode,
   includeVar: state.includeVar,
+  useSingleQuotes: state.useSingleQuotes,
   schemaText: state.schemaText,
 });
 
@@ -87,12 +102,13 @@ const initialState = {
   generatedCode: '// No code yet. Paste your schema in the Schema text input.',
   schemaText: '',
   includeVar: false,
+  useSingleQuotes: false,
 };
 
 const schemaChange = (state, {value}) => {
   let generatedCode = 'Could not generate.';
   try {
-    generatedCode = convert(state.includeVar, value);
+    generatedCode = convert(state.useSingleQuotes, state.includeVar, value);
   } catch (e) {}
   return Object.assign({}, state, {generatedCode, schemaText: value});
 };
@@ -101,9 +117,26 @@ const checkboxChange = (state, {value}) => {
   const includeVar = value;
   let generatedCode = 'Could not generate.';
   try {
-    generatedCode = convert(includeVar, state.schemaText);
+    generatedCode = convert(
+      state.useSingleQuotes,
+      includeVar,
+      state.schemaText
+    );
   } catch (e) {}
   return Object.assign({}, state, {includeVar, generatedCode});
+};
+
+const checkboxChangeQuotes = (state, {value}) => {
+  const useSingleQuotes = value;
+  let generatedCode = 'Could not generate.';
+  try {
+    generatedCode = convert(
+      useSingleQuotes,
+      state.includeVar,
+      state.schemaText
+    );
+  } catch (e) {}
+  return Object.assign({}, state, {useSingleQuotes, generatedCode});
 };
 
 const app = (state = initialState, action) => {
@@ -112,6 +145,8 @@ const app = (state = initialState, action) => {
       return schemaChange(state, action);
     case 'checkboxChange':
       return checkboxChange(state, action);
+    case 'checkboxChangeQuotes':
+      return checkboxChangeQuotes(state, action);
     default:
       return state;
   }

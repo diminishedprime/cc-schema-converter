@@ -8,14 +8,12 @@ function getFields() {\n\
   var aggregations = cc.AggregationType;\n\n\
 `;
 
-const formatFn = (functionName, argument, isString) =>
-  argument
-    ? `.${functionName}(${isString ? "'" : ''}${argument}${
-        isString ? "'" : ''
-      })`
-    : '';
+const formatFn = (functionName, argument, isString, useSingleQuotes) => {
+  const quotes = isString ? (useSingleQuotes ? "'" : '"') : '';
+  return argument ? `.${functionName}(${quotes}${argument}${quotes})` : '';
+};
 
-const fieldToFieldBuilder = (includeVar) => (field) => {
+const fieldToFieldBuilder = (includeVar, useSingleQuotes) => (field) => {
   const dimensionOrField =
     field.semantics.conceptType === 'METRIC' ? 'Metric' : 'Dimension';
 
@@ -28,13 +26,13 @@ const fieldToFieldBuilder = (includeVar) => (field) => {
         : '';
 
   let functions = [
-    formatFn('setId', field.name, true),
-    formatFn('setName', field.label, true),
+    formatFn('setId', field.name, true, useSingleQuotes),
+    formatFn('setName', field.label, true, useSingleQuotes),
     formatFn('setType', type),
-    formatFn('setDescription', field.description, true),
+    formatFn('setDescription', field.description, true, useSingleQuotes),
     formatFn('setAggregation', field.defaultAggregationType),
-    formatFn('setGroup', field.group, true),
-    formatFn('setFormula', field.formula, true),
+    formatFn('setGroup', field.group, true, useSingleQuotes),
+    formatFn('setFormula', field.formula, true, useSingleQuotes),
   ];
 
   const formattedFunctions = functions
@@ -53,18 +51,23 @@ const isDefaultDimension = (field) =>
 const isDefaultMetric = (field) =>
   field.semantics.conceptType === 'METRIC' && field.isDefault;
 
-export const convert = (includeVar, contents) => {
-  const fixedSingleQuotes = contents.replace(/'/g, '"');
-  const fixedObjectKeys = fixedSingleQuotes.replace(
-    /([a-zA-Z0-9]+?):/g,
-    '"$1":'
-  );
-  const noTrailingCommas = fixedObjectKeys.replace(/,(?=\s*?[}\]])/g, '');
-
-  const fields = JSON.parse(noTrailingCommas);
+export const convert = (useSingleQuotes, includeVar, contents) => {
+  let fields;
+  try {
+    fields = eval(contents);
+  } catch (e) {
+    const fixedSingleQuotes = contents.replace(/'/g, '"');
+    const fixedObjectKeys = fixedSingleQuotes.replace(
+      /([a-zA-Z0-9]+?):/g,
+      '"$1":'
+    );
+    const noTrailingCommas = fixedObjectKeys.replace(/,(?=\s*?[}\]])/g, '');
+    fields = JSON.parse(noTrailingCommas);
+  }
 
   const asLibraryCode =
-    fields.map(fieldToFieldBuilder(includeVar)).join('\n') + '\n';
+    fields.map(fieldToFieldBuilder(includeVar, useSingleQuotes)).join('\n') +
+    '\n';
 
   const defaultMetric = R.prop('name', fields.find(isDefaultMetric)) || '';
   const defaultMetricAdd = defaultMetric
