@@ -56,13 +56,7 @@ export const convert = (useSingleQuotes, includeVar, contents) => {
   try {
     fields = eval(contents);
   } catch (e) {
-    const fixedSingleQuotes = contents.replace(/'/g, '"');
-    const fixedObjectKeys = fixedSingleQuotes.replace(
-      /([a-zA-Z0-9]+?):/g,
-      '"$1":'
-    );
-    const noTrailingCommas = fixedObjectKeys.replace(/,(?=\s*?[}\]])/g, '');
-    fields = JSON.parse(noTrailingCommas);
+    fields = JSON.parse(contents);
   }
 
   const asLibraryCode =
